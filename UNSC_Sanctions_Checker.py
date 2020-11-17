@@ -7,13 +7,14 @@ import pandas as pd
 import requests
 from fuzzywuzzy import process
 
+
 def interface_method(f):
     # Decorator for identifying interface methods for easier calling
     f._is_interface_method = True
     return f
 
-class Application(object):
 
+class Application(object):
     loading_warning = 'Loading list, please wait.'
     UNSC_sanctions_list_url = "https://scsanctions.un.org/resources/xml/en/consolidated.xml"
 
@@ -48,24 +49,29 @@ class Application(object):
         self.mainframe = ttk.Frame(self.root, padding='4 4 20 20')
         self.mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
 
-
     @interface_method
     def create_load_button(self):
-        ttk.Button(self.mainframe, text='Load list', command=self.load_button_func).grid(
+        ttk.Button(self.mainframe, text='Load list',
+                   command=self.load_button_func).grid(
             column=0, row=0, sticky=W)
 
     @interface_method
     def create_list_info(self):
-        ttk.Label(self.mainframe, textvariable=self.list_info).grid(column=0,row=3,rowspan=3)
+        ttk.Label(self.mainframe, textvariable=self.list_info).grid(column=0,
+                                                                    row=3,
+                                                                    rowspan=3)
 
     @interface_method
     def create_get_list_button(self):
-        ttk.Button(self.mainframe, text="Get list online", command=self.get_list_button_func).grid(column=0, row=1, sticky=W)
+        ttk.Button(self.mainframe, text="Get list online",
+                   command=self.get_list_button_func).grid(column=0, row=1,
+                                                           sticky=W)
 
     @interface_method
     def create_check_update_button(self):
         ttk.Button(self.mainframe, text="Check for update",
-                   command=self.check_update_button_func).grid(column=0, row=2, sticky=W)
+                   command=self.check_update_button_func).grid(column=0, row=2,
+                                                               sticky=W)
 
     @interface_method
     def create_name_entry(self):
@@ -89,7 +95,8 @@ class Application(object):
     @interface_method
     def create_search_button(self):
         ttk.Button(self.mainframe, text='Search name',
-                   command=self.search_button_func).grid(column=3, row=0, sticky=W)
+                   command=self.search_button_func).grid(column=3, row=0,
+                                                         sticky=W)
 
     @interface_method
     def create_matches_list(self):
@@ -104,17 +111,20 @@ class Application(object):
         # Calls all methods decorated with @interface_method
         for name in dir(self):
             attr = getattr(self, name)
-            if getattr(attr,'_is_interface_method', False):
+            if getattr(attr, '_is_interface_method', False):
                 attr()
 
     def search_button_func(self):
-        if self.check_is_list_loaded():
+        if self.list_loaded:
             name = str(self.name_entry.get())
             self.matches.set(process.extractBests(query=name,
-                                                      choices=
-                                                      self.individuals_df[
-                                                          'FULL_NAME'],
-                                                      score_cutoff=self.score.get()))
+                                                  choices=
+                                                  self.individuals_df[
+                                                      'FULL_NAME'],
+                                                  score_cutoff=self.score.get()))
+        else:
+            messagebox.showerror(message='Sanctions list not loaded.')
+
 
     def get_list_button_func(self):
         if self.list_loaded:
@@ -161,34 +171,40 @@ class Application(object):
         # valid, calls method again while asking for user input on new url.
         r = requests.get(url)
         if r.status_code == 200 and r.headers['Content-Type'].__contains__(
-            'xml') and r.text.__contains__('CONSOLIDATED_LIST'):
+                'xml') and r.text.__contains__('CONSOLIDATED_LIST'):
             return r
         else:
             if messagebox.askyesno(message=(
-            f'Could not find the list at {url}\nWould you like to try with a different link?')):
+                    f'Could not find the list at {url}\nWould you like to try with a different link?')):
                 return self.connect_to_url(
                     url=simpledialog.askstring(title='Insert new link',
                                                prompt=f'Please enter new adress for UNSC Sanctions list in xml format\nLast address used:{url}'))
 
-    def check_list_is_outdated(self,requests_object):
+    def check_list_is_outdated(self, requests_object):
         # Currently just checking if list on memory is exact same size as list on url.
         # Not to be called by itself, used by check_update_button_func.
-        if int(requests_object.headers['Content-Length']) == stat(path=self.list_path)[-4]:
+        if int(requests_object.headers['Content-Length']) == \
+                stat(path=self.list_path)[-4]:
             return False
         else:
             return True
 
     def save_downloaded_list(self, requests_object):
         try:
-            savepath = filedialog.asksaveasfilename(initialdir=getcwd(),initialfile='consolidated.xml', filetypes= [('Xml files','*.xml')])
+            savepath = filedialog.asksaveasfilename(initialdir=getcwd(),
+                                                    initialfile='consolidated.xml',
+                                                    filetypes=[('Xml files',
+                                                                '*.xml')])
             with open(savepath, 'wb') as fd:
                 for chunk in requests_object.iter_content(chunk_size=128):
                     fd.write(chunk)
-                messagebox.showinfo(message=f'List downloaded from {requests_object.url} and saved at {savepath}')
+                messagebox.showinfo(
+                    message=f'List downloaded from {requests_object.url} and saved at {savepath}')
             self.list_path = savepath
             self.list_downloaded = True
         except AttributeError:
-            messagebox.showerror(message='Could not download list. Try again with a different link or load the list manually')
+            messagebox.showerror(
+                message='Could not download list. Try again with a different link or load the list manually')
 
     def check_for_list(self):
         if "consolidated.xml" in listdir(getcwd()) or self.list_downloaded:
@@ -206,10 +222,12 @@ class Application(object):
                 self.make_element_dfs()
                 self.clean_individuals_df()
                 self.append_individuals_full_name()
-                messagebox.showinfo(message=f"Loaded list from file 'consolidated.xml' in dir {getcwd()}")
+                messagebox.showinfo(
+                    message=f"Loaded list from file 'consolidated.xml' in dir {getcwd()}")
                 self.update_list_info()
             else:
-                messagebox.showinfo(message="Could not find list file ('consolidated.xml') in current dir\nPlease load the list manually or get it from the UNSC website")
+                messagebox.showinfo(
+                    message="Could not find list file ('consolidated.xml') in current dir\nPlease load the list manually or get it from the UNSC website")
         except:
             messagebox.showinfo(
                 message=f"Could not load file {self.list_path} in current dir\nPlease load the list manually or get it from the UNSC website")
@@ -217,12 +235,16 @@ class Application(object):
 
     def update_list_info(self):
         self.list_loaded = True
-        self.list_info.set(value=f'List loaded.\nNumber of Individuals: {self.individuals_df.__len__()}\nNumber of Entities: {self.entities_df.__len__()}')
+        self.list_info.set(
+            value=f'List loaded.\nNumber of Individuals: {self.individuals_df.__len__()}\nNumber of Entities: {self.entities_df.__len__()}')
 
     def load_list(self):
         # Loads a xml file and turns it into a list
         path_window = Tk()
-        self.list_path = filedialog.askopenfilename(initialdir=getcwd(), filetypes=[('Xml files','*.xml')], title='Choose xml list')
+        self.list_path = filedialog.askopenfilename(initialdir=getcwd(),
+                                                    filetypes=[('Xml files',
+                                                                '*.xml')],
+                                                    title='Choose xml list')
         path_window.withdraw()
         path_window.destroy()
         self.list = et.parse(self.list_path)
@@ -232,7 +254,8 @@ class Application(object):
     def make_element_dfs(self):
         # Takes xml element tree in list form and makes pandas dataframes
         for element in self.elements_list:
-            assert element.tag in ['INDIVIDUALS','ENTITIES'], f'Element parameter tag must be either "INDIVIDUALS" or "ENTITIES". Provided was {element.tag}'
+            assert element.tag in ['INDIVIDUALS',
+                                   'ENTITIES'], f'Element parameter tag must be either "INDIVIDUALS" or "ENTITIES". Provided was {element.tag}'
             df = pd.DataFrame(columns=Application.get_column_list(element))
             for child in list(element):
                 child_dict = {}
@@ -246,25 +269,29 @@ class Application(object):
 
     def clean_individuals_df(self):
         # Fills na's with empty strings and turns name columns into str type
-        self.individuals_df.fillna(value={'FIRST_NAME': '', 'SECOND_NAME': '', 'THIRD_NAME': '','FOURTH_NAME': ''}, inplace=True)
-        self.individuals_df[['FIRST_NAME', 'SECOND_NAME', 'THIRD_NAME', 'FOURTH_NAME']] = self.individuals_df[['FIRST_NAME', 'SECOND_NAME', 'THIRD_NAME', 'FOURTH_NAME']].astype(str)
+        self.individuals_df.fillna(
+            value={'FIRST_NAME': '', 'SECOND_NAME': '', 'THIRD_NAME': '',
+                   'FOURTH_NAME': ''}, inplace=True)
+        self.individuals_df[
+            ['FIRST_NAME', 'SECOND_NAME', 'THIRD_NAME', 'FOURTH_NAME']] = \
+        self.individuals_df[
+            ['FIRST_NAME', 'SECOND_NAME', 'THIRD_NAME', 'FOURTH_NAME']].astype(
+            str)
 
     def append_individuals_full_name(self):
         # Creates a full name column for every individual on list.
         # Full name column is the one used for matching.
-        self.individuals_df['FULL_NAME'] = self.individuals_df[['FIRST_NAME', 'SECOND_NAME', 'THIRD_NAME', 'FOURTH_NAME']].apply(lambda x: ' '.join(x),axis=1)
-        self.individuals_df['FULL_NAME'] = self.individuals_df['FULL_NAME'].str.strip()
+        self.individuals_df['FULL_NAME'] = self.individuals_df[
+            ['FIRST_NAME', 'SECOND_NAME', 'THIRD_NAME', 'FOURTH_NAME']].apply(
+            lambda x: ' '.join(x), axis=1)
+        self.individuals_df['FULL_NAME'] = self.individuals_df[
+            'FULL_NAME'].str.strip()
         while self.individuals_df['FULL_NAME'].str.contains('  ').any():
-            self.individuals_df['FULL_NAME'] = self.individuals_df['FULL_NAME'].str.replace('  ', ' ')
-
-    def check_is_list_loaded(self):
-        if self.list_loaded:
-            return True
-        else:
-            messagebox.showerror(message='Sanctions list not loaded.')
-            return False
+            self.individuals_df['FULL_NAME'] = self.individuals_df[
+                'FULL_NAME'].str.replace('  ', ' ')
 
     def main(self):
+        # Runs all methods to start the program
         self.root.title('UNSC Sanctions Checker')
         self.create_main_frame()
         self.call_all_interface_methods()

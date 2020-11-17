@@ -10,7 +10,7 @@ with open('requirements.txt','r') as fh:
 
 setuptools.setup(
     name="UNSC_Sanctions_Checker",
-    version="0.0.3",
+    version="0.0.4",
     author="Lucas Camillo",
     author_email="lucascamillo333@hotmail.com",
     description="UNSC Sanctions checker with a GUI",
