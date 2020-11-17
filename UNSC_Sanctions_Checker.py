@@ -266,7 +266,7 @@ class Application(object):
 
     def main(self):
         self.root.title('UNSC Sanctions Checker')
-        self.create_frame()
+        self.create_main_frame()
         self.call_all_interface_methods()
         self.autoload_list()
         self.name_entry.focus_force()
