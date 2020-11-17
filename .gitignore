@@ -1,2 +1,7 @@
 venv/
 /pip
+build/
+dist/
+*.egg-info/
+*.egg
+*.xml
