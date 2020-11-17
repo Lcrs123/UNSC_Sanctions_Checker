@@ -7,5 +7,8 @@ Uses fuzzy matching score for hits.
 Loads sanctions list in xml format. You can supply your own list or download it
 from the UNSC website from within the program.
 
+# Usage
+
+`python UNSC_Sanctions_Checker.py`
 
 
