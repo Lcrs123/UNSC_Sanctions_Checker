@@ -34,18 +34,18 @@ class Application(object):
         self.elements_list = []
         self.individuals_df = None
         self.entities_df = None
-        self.root = Tk()
         self.list_path = 'consolidated.xml'
         self.list_downloaded = False
         self.list_loaded = False
-        self.list_info = StringVar(value='List not loaded.')
 
     def create_main_frame(self):
-        # Creates the main Frame widget, referenced by all other widgets.
-        # Not decorated with @interface_method and called separately on main
-        # due to needing to be loaded first.
+        # Creates the root and main Frame widget, referenced by all other widgets.
+        # Not decorated with @interface_method and called separately on main()
+        # due to needing to be run first.
+        self.root = Tk()
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
+        self.root.title('UNSC Sanctions Checker')
         self.mainframe = ttk.Frame(self.root, padding='4 4 20 20')
         self.mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
 
@@ -57,6 +57,7 @@ class Application(object):
 
     @interface_method
     def create_list_info(self):
+        self.list_info = StringVar(value='List not loaded.')
         ttk.Label(self.mainframe, textvariable=self.list_info).grid(column=0,
                                                                     row=3,
                                                                     rowspan=3)
@@ -100,12 +101,11 @@ class Application(object):
 
     @interface_method
     def create_matches_list(self):
-        self.matches = StringVar()
+        self.matches = ttk.Treeview(self.mainframe)
+        self.matches.grid(column=1,row=4,columnspan=9)
         ttk.Label(self.mainframe, text='Matches:').grid(column=1, row=3,
-                                                        sticky=W)
-        ttk.Label(self.mainframe, textvariable=self.matches).grid(column=1,
-                                                                  row=4,
-                                                                  columnspan=9)
+                                                        sticky=(N,W))
+
 
     def call_all_interface_methods(self):
         # Calls all methods decorated with @interface_method
@@ -117,11 +117,22 @@ class Application(object):
     def search_button_func(self):
         if self.list_loaded:
             name = str(self.name_entry.get())
-            self.matches.set(process.extractBests(query=name,
-                                                  choices=
-                                                  self.individuals_df[
-                                                      'FULL_NAME'],
-                                                  score_cutoff=self.score.get()))
+            columns = self.individuals_df.columns.tolist()
+            columns.append('Match Score')
+            self.matches['columns'] = columns
+            self.matches['show'] = 'headings'
+            for col in columns:
+                self.matches.column(col,width=100)
+                self.matches.heading(col,text=str(col))
+            match_results = process.extractBests(query=name, choices=self.individuals_df['FULL_NAME'],score_cutoff=self.score.get(), limit=None)
+            match_lines = [x[-1] for x in match_results]
+            df_matches = self.individuals_df.iloc[match_lines]
+            df_matches['Score'] = [x[-2] for x in match_results]
+            self.matches.delete(*self.matches.get_children())
+            for row in df_matches.values.tolist():
+                self.matches.insert('','end', values=row)
+            # reordering display for showing full name and score first
+            self.matches['displaycolumns'] = (len(columns)-2, len(columns)-1, *range(0,len(columns)-3))
         else:
             messagebox.showerror(message='Sanctions list not loaded.')
 
@@ -277,6 +288,7 @@ class Application(object):
         self.individuals_df[
             ['FIRST_NAME', 'SECOND_NAME', 'THIRD_NAME', 'FOURTH_NAME']].astype(
             str)
+        self.individuals_df = self.individuals_df.dropna(axis=1, how='all')
 
     def append_individuals_full_name(self):
         # Creates a full name column for every individual on list.
@@ -289,10 +301,10 @@ class Application(object):
         while self.individuals_df['FULL_NAME'].str.contains('  ').any():
             self.individuals_df['FULL_NAME'] = self.individuals_df[
                 'FULL_NAME'].str.replace('  ', ' ')
+        self.individuals_df = self.individuals_df.drop(labels=['FIRST_NAME', 'SECOND_NAME', 'THIRD_NAME', 'FOURTH_NAME'],axis=1)
 
     def main(self):
         # Runs all methods to start the program
-        self.root.title('UNSC Sanctions Checker')
         self.create_main_frame()
         self.call_all_interface_methods()
         self.autoload_list()
