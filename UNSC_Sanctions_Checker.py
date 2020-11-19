@@ -60,11 +60,13 @@ class Application(object):
         self.list_info = StringVar(value='List not loaded.')
         ttk.Label(self.mainframe, textvariable=self.list_info).grid(column=0,
                                                                     row=3,
-                                                                    rowspan=3)
+                                                                    rowspan=3,
+                                                                    sticky=(
+                                                                    N, W))
 
     @interface_method
     def create_get_list_button(self):
-        ttk.Button(self.mainframe, text="Get list online",
+        ttk.Button(self.mainframe, text="Download list",
                    command=self.get_list_button_func).grid(column=0, row=1,
                                                            sticky=W)
 
@@ -79,19 +81,21 @@ class Application(object):
         self.name = StringVar()
         self.name_entry = ttk.Entry(self.mainframe, width=24,
                                     textvariable=self.name)
-        self.name_entry.grid(column=2, row=0, sticky=W)
+        self.name_entry.grid(column=2, row=0, sticky=(W, E))
         ttk.Label(self.mainframe, text='Name:').grid(column=1, row=0, sticky=E)
 
     @interface_method
     def create_score_entry(self):
-        self.score = IntVar(value=100)
+        self.score = IntVar(value=90)
         self.score_entry = ttk.LabeledScale(self.mainframe,
                                             variable=self.score, from_=100,
                                             to=0)
-        self.score_entry.grid(column=2, row=1)
+        self.score_entry.scale.set(90)
+        self.score_entry.grid(column=2, row=1, sticky=(W, E))
         self.score_entry.label.update()
         ttk.Label(self.mainframe, text='Minimum Score Match:').grid(column=1,
-                                                                    row=1)
+                                                                    row=1,
+                                                                    sticky=E)
 
     @interface_method
     def create_search_button(self):
@@ -100,12 +104,19 @@ class Application(object):
                                                          sticky=W)
 
     @interface_method
-    def create_matches_list(self):
-        self.matches = ttk.Treeview(self.mainframe)
-        self.matches.grid(column=1,row=4,columnspan=9)
-        ttk.Label(self.mainframe, text='Matches:').grid(column=1, row=3,
-                                                        sticky=(N,W))
-
+    def create_matches_treeview(self):
+        self.matches_treeview = ttk.Treeview(self.mainframe)
+        self.matches_treeview.grid(column=2, row=4, sticky=(N, W, S))
+        self.matches_label_var = StringVar(value='No Matches:')
+        ttk.Label(self.mainframe, textvariable=self.matches_label_var).grid(
+            column=2, row=3, sticky=W)
+        self.matches_scrollbar = ttk.Scrollbar(self.mainframe,
+                                               orient='vertical',
+                                               command=self.matches_treeview.yview)
+        self.matches_scrollbar.grid(row=4, column=3, rowspan=10,
+                                    sticky=(N, W, S))
+        self.matches_treeview.configure(
+            yscrollcommand=self.matches_scrollbar.set)
 
     def call_all_interface_methods(self):
         # Calls all methods decorated with @interface_method
@@ -113,29 +124,6 @@ class Application(object):
             attr = getattr(self, name)
             if getattr(attr, '_is_interface_method', False):
                 attr()
-
-    def search_button_func(self):
-        if self.list_loaded:
-            name = str(self.name_entry.get())
-            columns = self.individuals_df.columns.tolist()
-            columns.append('Match Score')
-            self.matches['columns'] = columns
-            self.matches['show'] = 'headings'
-            for col in columns:
-                self.matches.column(col,width=100)
-                self.matches.heading(col,text=str(col))
-            match_results = process.extractBests(query=name, choices=self.individuals_df['FULL_NAME'],score_cutoff=self.score.get(), limit=None)
-            match_lines = [x[-1] for x in match_results]
-            df_matches = self.individuals_df.iloc[match_lines]
-            df_matches['Score'] = [x[-2] for x in match_results]
-            self.matches.delete(*self.matches.get_children())
-            for row in df_matches.values.tolist():
-                self.matches.insert('','end', values=row)
-            # reordering display for showing full name and score first
-            self.matches['displaycolumns'] = (len(columns)-2, len(columns)-1, *range(0,len(columns)-3))
-        else:
-            messagebox.showerror(message='Sanctions list not loaded.')
-
 
     def get_list_button_func(self):
         if self.list_loaded:
@@ -177,6 +165,37 @@ class Application(object):
             messagebox.showerror(
                 message='Could not download list. Try again with a different link or choose it manually')
 
+    def search_button_func(self):
+        if self.list_loaded:
+            name = str(self.name_entry.get())
+            score = self.score.get()
+            columns = self.individuals_df.columns.tolist()
+            columns.append('Match Score')
+            self.matches_treeview['columns'] = columns
+            self.matches_treeview['show'] = 'headings'
+            for col in columns:
+                self.matches_treeview.column(col, width=100)
+                self.matches_treeview.heading(col, text=str(col))
+            match_results = process.extractBests(query=name,
+                                                 choices=self.individuals_df[
+                                                     'FULL_NAME'],
+                                                 score_cutoff=score,
+                                                 limit=None)
+            match_lines = [x[-1] for x in match_results]
+            df_matches = self.individuals_df.iloc[match_lines].copy()
+            df_matches['Score'] = [x[-2] for x in match_results]
+            self.matches_treeview.delete(*self.matches_treeview.get_children())
+            self.matches_label_var.set(value="No Matches" if len(
+                df_matches) == 0 else f'{len(df_matches)} Matches for {name} with score {score}.')
+            for row in df_matches.values.tolist():
+                self.matches_treeview.insert('', 'end', values=row)
+            # reordering display for showing full name and score first
+            self.matches_treeview['displaycolumns'] = (
+                len(columns) - 2, len(columns) - 1,
+                *range(0, len(columns) - 3))
+        else:
+            messagebox.showerror(message='Sanctions list not loaded.')
+
     def connect_to_url(self, url=UNSC_sanctions_list_url):
         # Attempts to connect to default url for sanctions list. If url is not
         # valid, calls method again while asking for user input on new url.
@@ -189,7 +208,7 @@ class Application(object):
                     f'Could not find the list at {url}\nWould you like to try with a different link?')):
                 return self.connect_to_url(
                     url=simpledialog.askstring(title='Insert new link',
-                                               prompt=f'Please enter new adress for UNSC Sanctions list in xml format\nLast address used:{url}'))
+                                               prompt=f'Please enter new address for UNSC Sanctions list in xml format\nLast address used:{url}'))
 
     def check_list_is_outdated(self, requests_object):
         # Currently just checking if list on memory is exact same size as list on url.
@@ -279,20 +298,22 @@ class Application(object):
                 self.entities_df = df
 
     def clean_individuals_df(self):
-        # Fills na's with empty strings and turns name columns into str type
+        # Fills name columns NAs with empty strings, turns name columns dtype
+        # to str, drops columns with all NAs.
         self.individuals_df.fillna(
             value={'FIRST_NAME': '', 'SECOND_NAME': '', 'THIRD_NAME': '',
                    'FOURTH_NAME': ''}, inplace=True)
         self.individuals_df[
             ['FIRST_NAME', 'SECOND_NAME', 'THIRD_NAME', 'FOURTH_NAME']] = \
-        self.individuals_df[
-            ['FIRST_NAME', 'SECOND_NAME', 'THIRD_NAME', 'FOURTH_NAME']].astype(
-            str)
+            self.individuals_df[
+                ['FIRST_NAME', 'SECOND_NAME', 'THIRD_NAME',
+                 'FOURTH_NAME']].astype(
+                str)
         self.individuals_df = self.individuals_df.dropna(axis=1, how='all')
 
     def append_individuals_full_name(self):
-        # Creates a full name column for every individual on list.
-        # Full name column is the one used for matching.
+        # Creates a full name column for every individual on list, drops used
+        # name columns. Full name column is the one used for matching.
         self.individuals_df['FULL_NAME'] = self.individuals_df[
             ['FIRST_NAME', 'SECOND_NAME', 'THIRD_NAME', 'FOURTH_NAME']].apply(
             lambda x: ' '.join(x), axis=1)
@@ -301,7 +322,9 @@ class Application(object):
         while self.individuals_df['FULL_NAME'].str.contains('  ').any():
             self.individuals_df['FULL_NAME'] = self.individuals_df[
                 'FULL_NAME'].str.replace('  ', ' ')
-        self.individuals_df = self.individuals_df.drop(labels=['FIRST_NAME', 'SECOND_NAME', 'THIRD_NAME', 'FOURTH_NAME'],axis=1)
+        self.individuals_df = self.individuals_df.drop(
+            labels=['FIRST_NAME', 'SECOND_NAME', 'THIRD_NAME', 'FOURTH_NAME'],
+            axis=1)
 
     def main(self):
         # Runs all methods to start the program
