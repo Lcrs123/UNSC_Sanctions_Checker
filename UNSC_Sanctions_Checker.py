@@ -1,11 +1,14 @@
 import xml.etree.ElementTree as et
+from datetime import date
 from os import getcwd, listdir, stat
 from tkinter import *
 from tkinter import filedialog, ttk, messagebox, simpledialog
 
 import pandas as pd
+import pdfkit
 import requests
 from fuzzywuzzy import process
+from jinja2 import Environment, FileSystemLoader
 
 
 def interface_method(f):
@@ -39,9 +42,9 @@ class Application(object):
         self.list_loaded = False
 
     def create_main_frame(self):
-        # Creates the root and main Frame widget, referenced by all other widgets.
-        # Not decorated with @interface_method and called separately on main()
-        # due to needing to be run first.
+        # Creates the root and main Frame widget, referenced by all other
+        # widgets. Not decorated with @interface_method and called separately
+        # on main() due to needing to be run first.
         self.root = Tk()
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
@@ -62,13 +65,14 @@ class Application(object):
                                                                     row=3,
                                                                     rowspan=3,
                                                                     sticky=(
-                                                                    N, W))
+                                                                        N, W))
 
     @interface_method
-    def create_get_list_button(self):
+    def create_download_list_button(self):
         ttk.Button(self.mainframe, text="Download list",
-                   command=self.get_list_button_func).grid(column=0, row=1,
-                                                           sticky=W)
+                   command=self.download_list_button_func).grid(column=0,
+                                                                row=1,
+                                                                sticky=W)
 
     @interface_method
     def create_check_update_button(self):
@@ -118,6 +122,13 @@ class Application(object):
         self.matches_treeview.configure(
             yscrollcommand=self.matches_scrollbar.set)
 
+    @interface_method
+    def create_generate_report_button(self):
+        ttk.Button(self.mainframe, text='Generate report',
+                   command=self.generate_report_button_func).grid(row=14,
+                                                                  column=2,
+                                                                  sticky=NW)
+
     def call_all_interface_methods(self):
         # Calls all methods decorated with @interface_method
         for name in dir(self):
@@ -125,7 +136,27 @@ class Application(object):
             if getattr(attr, '_is_interface_method', False):
                 attr()
 
-    def get_list_button_func(self):
+    def generate_report_button_func(self):
+        env = Environment(loader=FileSystemLoader('template'))
+        template = env.get_template('report.html')
+        template_vars = {
+            'name_searched': f'"{self.last_name_searched}"',
+            'title': 'UNSC Sanctions list check',
+            'score_used': self.last_score_used,
+            'matches_info': self.matches_label_var.get(),
+            'matches_table': self.df_matches.to_html(),
+            'date_of_search': str(date.today())
+        }
+        report_html = template.render(template_vars)
+        pdfkit.from_string(report_html,
+                           output_path=filedialog.asksaveasfilename(
+                               initialdir=getcwd(),
+                               initialfile=f'{self.last_name_searched} UNSC report.pdf',
+                               filetypes=[('Pdf files', '*.pdf')]),
+                           options={'quiet':''}
+                           )
+
+    def download_list_button_func(self):
         if self.list_loaded:
             if messagebox.askyesno(
                     message='A list is already loaded. Would you like to download it again?'):
@@ -157,7 +188,7 @@ class Application(object):
             if self.check_list_is_outdated(r):
                 if messagebox.askyesno(
                         message='Current list is outdated, download new one?'):
-                    self.get_list_button_func()
+                    self.download_list_button_func()
             else:
                 messagebox.showinfo(
                     message=f"List is up-to-date.\nList on UNSC site has {r.headers['Content-Length']} bytes.\nLoaded list has {stat(path=self.list_path)[-4]} bytes.")
@@ -167,32 +198,36 @@ class Application(object):
 
     def search_button_func(self):
         if self.list_loaded:
-            name = str(self.name_entry.get())
-            score = self.score.get()
-            columns = self.individuals_df.columns.tolist()
-            columns.append('Match Score')
+            # get fuzzy match results
+            self.last_name_searched = str(self.name_entry.get())
+            self.last_score_used = self.score.get()
+            match_results = process.extractBests(
+                query=self.last_name_searched,
+                choices=self.individuals_df['FULL_NAME'],
+                score_cutoff=self.last_score_used,
+                limit=None
+            )
+            # get lines in df with the matches
+            match_lines = [x[-1] for x in match_results]
+            self.df_matches = self.individuals_df.iloc[match_lines].copy()
+            # add score values column for matches
+            self.df_matches.insert(loc=1, column='Score',
+                                   value=[x[-2] for x in match_results])
+            # create treeview columns and set headings
+            columns = self.df_matches.columns.tolist()
             self.matches_treeview['columns'] = columns
             self.matches_treeview['show'] = 'headings'
             for col in columns:
-                self.matches_treeview.column(col, width=100)
+                self.matches_treeview.column(col, width=50)
                 self.matches_treeview.heading(col, text=str(col))
-            match_results = process.extractBests(query=name,
-                                                 choices=self.individuals_df[
-                                                     'FULL_NAME'],
-                                                 score_cutoff=score,
-                                                 limit=None)
-            match_lines = [x[-1] for x in match_results]
-            df_matches = self.individuals_df.iloc[match_lines].copy()
-            df_matches['Score'] = [x[-2] for x in match_results]
+            # clear treeview results before adding new ones
             self.matches_treeview.delete(*self.matches_treeview.get_children())
-            self.matches_label_var.set(value="No Matches" if len(
-                df_matches) == 0 else f'{len(df_matches)} Matches for {name} with score {score}.')
-            for row in df_matches.values.tolist():
+            # Change treeview label to number of matches
+            self.matches_label_var.set(
+                value=f'{len(self.df_matches)} matches for "{self.last_name_searched}" using score {self.last_score_used}.')
+            # add match results to treeview
+            for row in self.df_matches.values.tolist():
                 self.matches_treeview.insert('', 'end', values=row)
-            # reordering display for showing full name and score first
-            self.matches_treeview['displaycolumns'] = (
-                len(columns) - 2, len(columns) - 1,
-                *range(0, len(columns) - 3))
         else:
             messagebox.showerror(message='Sanctions list not loaded.')
 
@@ -325,6 +360,9 @@ class Application(object):
         self.individuals_df = self.individuals_df.drop(
             labels=['FIRST_NAME', 'SECOND_NAME', 'THIRD_NAME', 'FOURTH_NAME'],
             axis=1)
+        self.individuals_df = self.individuals_df[
+            ['FULL_NAME'] + [col for col in self.individuals_df.columns if
+                             col != 'FULL_NAME']]
 
     def main(self):
         # Runs all methods to start the program

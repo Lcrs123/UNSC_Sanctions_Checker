@@ -1,3 +1,5 @@
+pdfkit
+jinja2
 fuzzywuzzy
 requests
 pandas
