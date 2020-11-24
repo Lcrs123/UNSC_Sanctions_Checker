@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as et
 from datetime import date
-from os import getcwd, listdir, stat
+from os import getcwd, stat, startfile, path
 from tkinter import *
 from tkinter import filedialog, ttk, messagebox, simpledialog
 
@@ -9,7 +9,6 @@ import pdfkit
 import requests
 from fuzzywuzzy import process
 from jinja2 import Environment, FileSystemLoader
-
 
 def interface_method(f):
     # Decorator for identifying interface methods for easier calling
@@ -24,6 +23,7 @@ class Application(object):
     @staticmethod
     def get_column_list(element) -> list:
         # takes a xml element tree and returns the childrens names as a column list
+        # used on the INDIVIDUALS or ENTITIES element tree branches
         assert element.tag in ['INDIVIDUALS',
                                'ENTITIES'], f'Element parameter tag must be either "INDIVIDUALS" or "ENTITIES". Provided was {element.tag}'
         element_columns = []
@@ -33,13 +33,14 @@ class Application(object):
         return element_columns
 
     def __init__(self):
-        self.list = None
+        self.etree = None
         self.elements_list = []
         self.individuals_df = None
         self.entities_df = None
-        self.list_path = 'consolidated.xml'
+        self.list_path = 'data/consolidated.xml'
         self.list_downloaded = False
         self.list_loaded = False
+        self.list_date = None
 
     def create_main_frame(self):
         # Creates the root and main Frame widget, referenced by all other
@@ -137,50 +138,22 @@ class Application(object):
                 attr()
 
     def generate_report_button_func(self):
-        env = Environment(loader=FileSystemLoader('template'))
-        template = env.get_template('report.html')
-        template_vars = {
-            'name_searched': f'"{self.last_name_searched}"',
-            'title': 'UNSC Sanctions list check',
-            'score_used': self.last_score_used,
-            'matches_info': self.matches_label_var.get(),
-            'matches_table': self.df_matches.to_html(),
-            'date_of_search': str(date.today())
-        }
-        report_html = template.render(template_vars)
-        pdfkit.from_string(report_html,
-                           output_path=filedialog.asksaveasfilename(
-                               initialdir=getcwd(),
-                               initialfile=f'{self.last_name_searched} UNSC report.pdf',
-                               filetypes=[('Pdf files', '*.pdf')]),
-                           options={'quiet':''}
-                           )
+        if self.list_loaded and hasattr(self,'last_name_searched'):
+            html_report = self.make_html_report()
+            self.output_report(html_report)
+        else:
+            messagebox.showerror(message='List not loaded or no name searched yet')
 
     def download_list_button_func(self):
         if self.list_loaded:
             if messagebox.askyesno(
                     message='A list is already loaded. Would you like to download it again?'):
-                self.list_info.set(value='Downloading list, please wait.')
-                r = self.connect_to_url()
-                self.save_downloaded_list(r)
-                if messagebox.askyesno(
-                        message='Would you like to load the downloaded list now?\nYou have the option to manually load it later.'):
-                    self.autoload_list()
+                self.connect_save_load()
         else:
-            self.list_info.set(value='Downloading list, please wait.')
-            r = self.connect_to_url()
-            self.save_downloaded_list(r)
-            if messagebox.askyesno(
-                    message='Would you like to load the downloaded list now?\nYou have the option to manually load it later.'):
-                self.autoload_list()
+            self.connect_save_load()
 
     def load_button_func(self):
-        self.list_info.set(Application.loading_warning)
         self.load_list()
-        self.make_element_dfs()
-        self.clean_individuals_df()
-        self.append_individuals_full_name()
-        self.update_list_info()
 
     def check_update_button_func(self):
         try:
@@ -197,6 +170,7 @@ class Application(object):
                 message='Could not download list. Try again with a different link or choose it manually')
 
     def search_button_func(self):
+        #TODO split method into smaller functions
         if self.list_loaded:
             # get fuzzy match results
             self.last_name_searched = str(self.name_entry.get())
@@ -229,7 +203,51 @@ class Application(object):
             for row in self.df_matches.values.tolist():
                 self.matches_treeview.insert('', 'end', values=row)
         else:
-            messagebox.showerror(message='Sanctions list not loaded.')
+            messagebox.showerror(message='Sanctions list not loaded. Please load a list before trying to search')
+
+    def ask_open_report(self, output_path):
+        if messagebox.askyesno(
+                message=f'Report saved at {output_path}.\nWould you like to open the report?'):
+            startfile(filepath=output_path)
+
+    def make_html_report(self):
+        env = Environment(loader=FileSystemLoader('template'))
+        template = env.get_template('report.html')
+        template_vars = {
+            'name_searched': f'"{self.last_name_searched}"',
+            'title': 'UNSC Sanctions list check',
+            'score_used': self.last_score_used,
+            'matches_info': self.matches_label_var.get(),
+            'matches_table': self.df_matches.to_html(),
+            'date_of_search': str(date.today())
+        }
+        html_report = template.render(template_vars)
+        return html_report
+
+    def output_report(self, html_report):
+        try:
+            output_path = self.output_report_path('pdf')
+            pdfkit.from_string(html_report,
+                               output_path=output_path,
+                               options={'quiet': ''}
+                               )
+            self.ask_open_report(output_path)
+        except OSError:
+            if messagebox.askyesno(
+                    message="Could not save report as pdf. Package wkhtmltopdf appears to not be installed correctly. Package file wkhtmltopdf.exe should be in working directory.\n\nSave report in html format?"):
+                output_path = self.output_report_path('html')
+                with open(output_path, 'w', encoding='UTF-8') as f:
+                    f.write(html_report)
+                self.ask_open_report(output_path)
+
+    def output_report_path(self, filetype:str):
+        assert filetype in ['pdf','html']
+        output_path = filedialog.asksaveasfilename(
+                initialdir='Reports',
+                initialfile=f'{self.last_score_used}-{self.last_name_searched}-report.{filetype}',
+                filetypes=[(f'{filetype.capitalize()} files', f'*.{filetype}')]
+            )
+        return output_path
 
     def connect_to_url(self, url=UNSC_sanctions_list_url):
         # Attempts to connect to default url for sanctions list. If url is not
@@ -245,6 +263,14 @@ class Application(object):
                     url=simpledialog.askstring(title='Insert new link',
                                                prompt=f'Please enter new address for UNSC Sanctions list in xml format\nLast address used:{url}'))
 
+    def connect_save_load(self):
+        self.list_info.set(value='Downloading list, please wait.')
+        r = self.connect_to_url()
+        self.save_downloaded_list(r)
+        if messagebox.askyesno(
+                message='Would you like to load the downloaded list now?\nYou have the option to manually load it later.'):
+            self.load_list(auto=True)
+
     def check_list_is_outdated(self, requests_object):
         # Currently just checking if list on memory is exact same size as list on url.
         # Not to be called by itself, used by check_update_button_func.
@@ -256,10 +282,12 @@ class Application(object):
 
     def save_downloaded_list(self, requests_object):
         try:
-            savepath = filedialog.asksaveasfilename(initialdir=getcwd(),
-                                                    initialfile='consolidated.xml',
-                                                    filetypes=[('Xml files',
-                                                                '*.xml')])
+            savepath = filedialog.asksaveasfilename(
+                initialdir=path.abspath(path.dirname(self.list_path)),
+                initialfile='consolidated.xml',
+                filetypes=[('Xml files',
+                            '*.xml')]
+            )
             with open(savepath, 'wb') as fd:
                 for chunk in requests_object.iter_content(chunk_size=128):
                     fd.write(chunk)
@@ -272,49 +300,65 @@ class Application(object):
                 message='Could not download list. Try again with a different link or load the list manually')
 
     def check_for_list(self):
-        if "consolidated.xml" in listdir(getcwd()) or self.list_downloaded:
+        if path.exists(self.list_path) or self.list_downloaded:
             return True
         else:
             return False
 
-    def autoload_list(self):
+    def load_list(self, auto=False, no_interface=False):
+        # auto is used on main() for trying to load the list automatically from
+        # default path. no_interface is used for debugging and development
+        if auto==False:
+            path_window = Tk()
+            self.list_path = filedialog.askopenfilename(initialdir=getcwd(),
+                                                        filetypes=[
+                                                            ('Xml files',
+                                                             '*.xml')],
+                                                        title='Choose list in xml format'
+                                                        )
+            path_window.withdraw()
+            path_window.destroy()
         try:
             if self.check_for_list():
-                self.list_info.set(value=Application.loading_warning)
-                self.list = et.parse(self.list_path)
-                root = self.list.getroot()
-                self.elements_list.extend(list(root)[0:2])
+                if no_interface == False:
+                    self.list_info.set(value=Application.loading_warning)
+                self.etree_to_list()
                 self.make_element_dfs()
                 self.clean_individuals_df()
                 self.append_individuals_full_name()
                 messagebox.showinfo(
-                    message=f"Loaded list from file 'consolidated.xml' in dir {getcwd()}")
-                self.update_list_info()
+                    message=f"Loaded list from file {self.list_path}")
+                if no_interface == False:
+                    self.update_list_info()
+                else:
+                    self.update_list_info(no_interface=no_interface)
             else:
                 messagebox.showinfo(
-                    message="Could not find list file ('consolidated.xml') in current dir\nPlease load the list manually or get it from the UNSC website")
+                    message=f"Could not find list file ('consolidated.xml') in directory {path.abspath(path.dirname(self.list_path))}\nPlease load the list manually or get it from the UNSC website")
         except:
             messagebox.showinfo(
-                message=f"Could not load file {self.list_path} in current dir\nPlease load the list manually or get it from the UNSC website")
-            self.list_info.set(value='List not loaded.')
+                message=f"Could not load file {self.list_path}.\nPlease load the list manually or get it from the UNSC website")
+            if no_interface == False:
+                self.list_info.set(value='List not loaded.')
 
-    def update_list_info(self):
+
+    def etree_to_list(self):
+        self.etree = et.parse(self.list_path)
+        root = self.etree.getroot()
+        self.elements_list.extend(list(root)[0:2])
+
+    def update_list_info(self, no_interface=False):
         self.list_loaded = True
-        self.list_info.set(
-            value=f'List loaded.\nNumber of Individuals: {self.individuals_df.__len__()}\nNumber of Entities: {self.entities_df.__len__()}')
+        self.list_date = self.get_list_date()
+        if no_interface==False:
+            self.list_info.set(
+                value=f'List loaded.\nNumber of Individuals: {self.individuals_df.__len__()}\nNumber of Entities: {self.entities_df.__len__()}\n\nList date: {self.list_date.isoformat()}')
 
-    def load_list(self):
-        # Loads a xml file and turns it into a list
-        path_window = Tk()
-        self.list_path = filedialog.askopenfilename(initialdir=getcwd(),
-                                                    filetypes=[('Xml files',
-                                                                '*.xml')],
-                                                    title='Choose xml list')
-        path_window.withdraw()
-        path_window.destroy()
-        self.list = et.parse(self.list_path)
-        etree_root = self.list.getroot()
-        self.elements_list.extend(list(etree_root)[0:2])
+    def get_list_date(self):
+        root = self.etree.getroot()
+        date_str = root.items()[1][1]
+        iso_date = date.fromisoformat(date_str[:10])
+        return iso_date
 
     def make_element_dfs(self):
         # Takes xml element tree in list form and makes pandas dataframes
@@ -368,7 +412,7 @@ class Application(object):
         # Runs all methods to start the program
         self.create_main_frame()
         self.call_all_interface_methods()
-        self.autoload_list()
+        self.load_list(auto=True)
         self.name_entry.focus_force()
         self.root.mainloop()
 

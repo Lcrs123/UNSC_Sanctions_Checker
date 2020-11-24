@@ -4,6 +4,6 @@ build/
 dist/
 *.egg-info/
 *.egg
-*.xml
 *.pdf
 *wkhtmlto*
+reports/*

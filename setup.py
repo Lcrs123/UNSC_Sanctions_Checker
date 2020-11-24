@@ -10,7 +10,7 @@ with open('requirements.txt','r') as fh:
 
 setuptools.setup(
     name="UNSC_Sanctions_Checker",
-    version="2.0.0",
+    version="2.1.0",
     author="Lucas Camillo",
     author_email="lucascamillo333@hotmail.com",
     description="UNSC Sanctions checker with a GUI",
@@ -24,5 +24,6 @@ setuptools.setup(
                  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
                  "Operating System :: Microsoft :: Windows"],
     python_requires='>=3.7',
-    install_requires=requirements
+    install_requires=requirements,
+    data_files=[('template','template/report.html'),('data','data/consolidated.xml'),('reports','')]
 )
