@@ -1,0 +1,3 @@
+include template/report.html
+include wkhtmltopdf.exe
+include reports/
