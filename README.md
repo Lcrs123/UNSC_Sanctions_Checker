@@ -12,6 +12,10 @@ from the UNSC website from within the program.
 Comes with a list, but you should probably download the newest version the first
 time you run the program.
 
+Also included wkhtmltopdf.exe, downloaded from wkhtmltopdf.org, used by pdfkit
+for generating pdf reports. You can download it again and overwrite it if you
+don't feel confortable using the supplied one.
+
 # Installation and Usage
 
 To install the package:
@@ -20,11 +24,7 @@ To install the package:
 
 You can run the script from the terminal:
 
-`python -m unsc_sanctions_checker.py`
-
-or just:
-
-`unsc'
+`unsc`
 
 In python you can do:
 

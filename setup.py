@@ -9,8 +9,8 @@ with open('requirements.txt','r') as fh:
         requirements.append(line.replace('\n',''))
 
 setup(
-    name="UNSC_Sanctions_Checker",
-    version="3.1.0",
+    name="unsc_sanctions_checker",
+    version="3.1.1",
     author="Lucas Camillo",
     author_email="lucascamillo333@hotmail.com",
     description="UNSC Sanctions checker with a GUI",

@@ -3,16 +3,17 @@ from datetime import date
 from os import getcwd, stat, startfile, path
 from tkinter import *
 from tkinter import filedialog, ttk, messagebox, simpledialog
-# importing directories as packages using empty __init__.py files for easier
-# pathing.
-from unsc_sanctions_checker import data,template
-from unsc_sanctions_checker import wkhtmltopdf as _wkhtmltopdf
 
 import pandas as pd
 import pdfkit
 import requests
 from fuzzywuzzy import process
 from jinja2 import Environment, FileSystemLoader
+
+# importing directories as packages using empty __init__.py files for easier
+# pathing.
+from unsc_sanctions_checker import data, template
+from unsc_sanctions_checker import wkhtmltopdf as _wkhtmltopdf
 
 
 def interface_method(f):
@@ -23,9 +24,11 @@ def interface_method(f):
 
 class Application(object):
     UNSC_sanctions_list_url = "https://scsanctions.un.org/resources/xml/en/consolidated.xml"
-    default_list_path = path.join(path.dirname(data.__file__),'consolidated.xml')
+    default_list_path = path.join(path.dirname(data.__file__),
+                                  'consolidated.xml')
     default_template_path = path.dirname(template.__file__)
-    default_wkhtmltopdf_path = path.join(path.dirname(_wkhtmltopdf.__file__),'wkhtmltopdf.exe')
+    default_wkhtmltopdf_path = path.join(path.dirname(_wkhtmltopdf.__file__),
+                                         'wkhtmltopdf.exe')
 
     @staticmethod
     def get_column_list(element) -> list:
@@ -57,15 +60,18 @@ class Application(object):
         self.main_frame.grid()
 
     def create_list_info_frame(self):
-        self.list_info_frame = ttk.Frame(self.main_frame,relief=GROOVE,padding='5 5 5 5')
-        self.list_info_frame.grid(row=0,column=0,sticky=NW,rowspan=2)
+        self.list_info_frame = ttk.Frame(self.main_frame, relief=GROOVE,
+                                         padding='5 5 5 5')
+        self.list_info_frame.grid(row=0, column=0, sticky=NW, rowspan=2)
 
     def create_search_options_frame(self):
-        self.search_options_frame = ttk.Frame(self.main_frame,relief=GROOVE,padding='5 5 5 5')
-        self.search_options_frame.grid(row=0,column=1,sticky=NW)
+        self.search_options_frame = ttk.Frame(self.main_frame, relief=GROOVE,
+                                              padding='5 5 5 5')
+        self.search_options_frame.grid(row=0, column=1, sticky=NW)
 
     def create_search_results_frame(self):
-        self.search_results_frame = ttk.Frame(self.main_frame,relief=GROOVE,padding='5 5 5 5')
+        self.search_results_frame = ttk.Frame(self.main_frame, relief=GROOVE,
+                                              padding='5 5 5 5')
         self.search_results_frame.grid(row=1, column=1, sticky=NW)
 
     def create_all_sub_frames(self):
@@ -103,20 +109,27 @@ class Application(object):
 
     @interface_method
     def create_show_list_button(self):
-        self.show_list_button = ttk.Button(master=self.list_info_frame,text='Show list',command=self.show_list_button_func).grid(column=0,row=4,sticky=W)
+        self.show_list_button = ttk.Button(master=self.list_info_frame,
+                                           text='Show list',
+                                           command=self.show_list_button_func).grid(
+            column=0, row=4, sticky=W)
 
     @interface_method
     def create_name_entry(self):
         self.name_to_search = StringVar()
-        self.name_entry = ttk.Entry(self.search_options_frame, textvariable=self.name_to_search)
+        self.name_entry = ttk.Entry(self.search_options_frame,
+                                    textvariable=self.name_to_search)
         self.name_entry.grid(column=1, row=1, sticky=(W, E), columnspan=2)
-        ttk.Label(self.search_options_frame, text='Name:').grid(column=0, row=1, sticky=E)
+        ttk.Label(self.search_options_frame, text='Name:').grid(column=0,
+                                                                row=1,
+                                                                sticky=E)
 
     @interface_method
     def create_search_button(self):
         ttk.Button(self.search_options_frame, text='Search',
                    command=self.search_button_func).grid(column=3, row=1,
                                                          sticky=W)
+
     @interface_method
     def create_score_entry(self):
         ttk.Label(self.search_options_frame, text='Minimum Score Match:').grid(
@@ -133,43 +146,50 @@ class Application(object):
 
     @interface_method
     def create_choose_list_buttons(self):
-        ttk.Label(master=self.search_options_frame, text='List to search:').grid(row=0,column=0,sticky=E)
+        ttk.Label(master=self.search_options_frame,
+                  text='List to search:').grid(row=0, column=0, sticky=E)
         self.list_chosen = StringVar(value='Individuals')
-        self.individuals_list_rb = ttk.Radiobutton(master=self.search_options_frame, text='Individuals',var=self.list_chosen, value='Individuals')
-        self.entities_list_rb = ttk.Radiobutton(master=self.search_options_frame, text='Entities',var=self.list_chosen,value='Entities')
-        self.individuals_list_rb.grid(row=0,column=1,sticky=W)
-        self.entities_list_rb.grid(row=0,column=2,sticky=W)
+        self.individuals_list_rb = ttk.Radiobutton(
+            master=self.search_options_frame, text='Individuals',
+            var=self.list_chosen, value='Individuals')
+        self.entities_list_rb = ttk.Radiobutton(
+            master=self.search_options_frame, text='Entities',
+            var=self.list_chosen, value='Entities')
+        self.individuals_list_rb.grid(row=0, column=1, sticky=W)
+        self.entities_list_rb.grid(row=0, column=2, sticky=W)
 
     @interface_method
     def create_matches_treeview(self, full_list=False):
         # creates the treeview for the match results. Use with full_list = True
         # to create the treeview for showing the entire list in a new window
-        if full_list==False:
+        if full_list == False:
             self.matches_label_var = StringVar(value='No Matches:')
-            ttk.Label(self.search_results_frame,textvariable=self.matches_label_var).grid(column=0, row=0, sticky=W)
+            ttk.Label(self.search_results_frame,
+                      textvariable=self.matches_label_var).grid(column=0,
+                                                                row=0,
+                                                                sticky=W)
             self.matches_treeview = ttk.Treeview(self.search_results_frame)
             self.matches_treeview.grid(column=0, row=1, sticky=(N, W, S))
             self.matches_scrollbar = ttk.Scrollbar(self.search_results_frame,
                                                    orient='vertical',
                                                    command=self.matches_treeview.yview)
-            self.matches_scrollbar.grid(column=1, row=1,sticky=(N, W, S))
+            self.matches_scrollbar.grid(column=1, row=1, sticky=(N, W, S))
             self.matches_treeview.configure(
                 yscrollcommand=self.matches_scrollbar.set)
         else:
             self.full_list_label_var = StringVar(value='')
             ttk.Label(self.full_list_window,
                       textvariable=self.full_list_label_var).grid(column=1,
-                                                                row=0,
-                                                                sticky=W)
+                                                                  row=0,
+                                                                  sticky=W)
             self.full_list_treeview = ttk.Treeview(self.full_list_window)
             self.full_list_treeview.grid(column=1, row=1, sticky=(N, W, S))
             self.full_list_scrollbar = ttk.Scrollbar(self.full_list_window,
-                                                   orient='vertical',
-                                                   command=self.full_list_treeview.yview)
+                                                     orient='vertical',
+                                                     command=self.full_list_treeview.yview)
             self.full_list_scrollbar.grid(column=2, row=1, sticky=(N, W, S))
             self.full_list_treeview.configure(
                 yscrollcommand=self.full_list_scrollbar.set)
-
 
     @interface_method
     def create_generate_report_button(self):
@@ -186,16 +206,23 @@ class Application(object):
                 attr()
 
     def show_list_button_func(self):
-        self.full_list_window = Toplevel(master=self.main_frame, name='full_list_window')
+        self.full_list_window = Toplevel(master=self.main_frame,
+                                         name='full_list_window')
         if self.full_list_window_rb_var == None:
             self.full_list_window_rb_var = StringVar(value='Individuals')
         self.create_matches_treeview(full_list=True)
-        Radiobutton(master=self.full_list_window, text='Individuals',var=self.full_list_window_rb_var,value='Individuals',indicatoron=False, command=self.display_full_list).grid(row=0,column=0,sticky=NW)
-        Radiobutton(master=self.full_list_window, text='Entities',var=self.full_list_window_rb_var, value='Entities',indicatoron=False, command=self.display_full_list).grid(row=1,column=0,sticky=NW)
+        Radiobutton(master=self.full_list_window, text='Individuals',
+                    var=self.full_list_window_rb_var, value='Individuals',
+                    indicatoron=False, command=self.display_full_list).grid(
+            row=0, column=0, sticky=NW)
+        Radiobutton(master=self.full_list_window, text='Entities',
+                    var=self.full_list_window_rb_var, value='Entities',
+                    indicatoron=False, command=self.display_full_list).grid(
+            row=1, column=0, sticky=NW)
         self.display_full_list()
 
     def display_full_list(self):
-        #TODO split into smaller functions
+        # TODO split into smaller functions
         self.full_list_treeview.delete(*self.full_list_treeview.get_children())
         chosen_list_df = self.list_choice_to_dataframe(
             self.full_list_window_rb_var.get())
@@ -214,11 +241,12 @@ class Application(object):
             self.full_list_treeview.insert('', 'end', values=row)
 
     def generate_report_button_func(self):
-        if self.list_loaded and hasattr(self,'last_name_searched'):
+        if self.list_loaded and hasattr(self, 'last_name_searched'):
             html_report = self.make_html_report()
             self.output_report(html_report)
         else:
-            messagebox.showerror(message='List not loaded or no name searched yet')
+            messagebox.showerror(
+                message='List not loaded or no name searched yet')
 
     def download_list_button_func(self):
         if self.list_loaded:
@@ -246,13 +274,14 @@ class Application(object):
                 message='Could not download list. Try again with a different link or choose it manually')
 
     def search_button_func(self):
-        #TODO split method into smaller functions
+        # TODO split method into smaller functions
         if self.list_loaded:
             # save search info
             self.last_name_searched = str(self.name_entry.get())
             self.last_score_used = self.score.get()
             self.last_list_chosen = self.list_chosen.get()
-            self.df_matches = self.get_match_results(chosen_list=self.last_list_chosen)
+            self.df_matches = self.get_match_results(
+                chosen_list=self.last_list_chosen)
             # clear treeview results before adding new ones
             self.matches_treeview.delete(*self.matches_treeview.get_children())
             # create treeview columns and set headings
@@ -269,23 +298,26 @@ class Application(object):
             for row in self.df_matches.values.tolist():
                 self.matches_treeview.insert('', 'end', values=row)
         else:
-            messagebox.showerror(message='Sanctions list not loaded. Please load a list before trying to search')
+            messagebox.showerror(
+                message='Sanctions list not loaded. Please load a list before trying to search')
 
-    def get_match_results(self,chosen_list:str):
+    def get_match_results(self, chosen_list: str):
         # returns the match results with matching score added
         chosen_dataframe = self.list_choice_to_dataframe(chosen_list)
         match_results = process.extractBests(
             query=self.last_name_searched,
-            choices=chosen_dataframe['FULL_NAME' if chosen_list == 'Individuals' else 'FIRST_NAME'],
+            choices=chosen_dataframe[
+                'FULL_NAME' if chosen_list == 'Individuals' else 'FIRST_NAME'],
             score_cutoff=self.last_score_used,
             limit=None
         )
         match_lines = [x[-1] for x in match_results]
         df_matches = chosen_dataframe.iloc[match_lines].copy()
-        df_matches.insert(loc=1, column='Score',value=[x[-2] for x in match_results])
+        df_matches.insert(loc=1, column='Score',
+                          value=[x[-2] for x in match_results])
         return df_matches
 
-    def list_choice_to_dataframe(self,chosen_list):
+    def list_choice_to_dataframe(self, chosen_list):
         lists_dataframe_dict = {'Individuals': self.individuals_df,
                                 'Entities': self.entities_df}
         return lists_dataframe_dict[chosen_list]
@@ -296,7 +328,8 @@ class Application(object):
             startfile(filepath=output_path)
 
     def make_html_report(self):
-        env = Environment(loader=FileSystemLoader(Application.default_template_path))
+        env = Environment(
+            loader=FileSystemLoader(Application.default_template_path))
         template = env.get_template('report.html')
         template_vars = {
             'name_searched': f'"{self.last_name_searched}"',
@@ -314,8 +347,9 @@ class Application(object):
     def output_report(self, html_report):
         try:
             output_path = self.output_report_path('pdf')
-            if self.pdfkit_config==None:
-                self.pdfkit_config = pdfkit.configuration(wkhtmltopdf=Application.default_wkhtmltopdf_path)
+            if self.pdfkit_config == None:
+                self.pdfkit_config = pdfkit.configuration(
+                    wkhtmltopdf=Application.default_wkhtmltopdf_path)
             pdfkit.from_string(html_report,
                                output_path=output_path,
                                options={'quiet': ''},
@@ -330,13 +364,13 @@ class Application(object):
                     f.write(html_report)
                 self.ask_open_report(output_path)
 
-    def output_report_path(self, filetype:str):
-        assert filetype in ['pdf','html']
+    def output_report_path(self, filetype: str):
+        assert filetype in ['pdf', 'html']
         output_path = filedialog.asksaveasfilename(
-                initialdir=getcwd(),
-                initialfile=f'{self.last_score_used}-{self.last_name_searched}-report.{filetype}',
-                filetypes=[(f'{filetype.capitalize()} files', f'*.{filetype}')]
-            )
+            initialdir=getcwd(),
+            initialfile=f'{self.last_score_used}-{self.last_name_searched}-report.{filetype}',
+            filetypes=[(f'{filetype.capitalize()} files', f'*.{filetype}')]
+        )
         return output_path
 
     def connect_to_url(self, url=UNSC_sanctions_list_url):
@@ -398,7 +432,7 @@ class Application(object):
     def load_list(self, auto=False, no_interface=False):
         # auto is used on main() for trying to load the list automatically from
         # default path. no_interface is used for debugging and development
-        if auto==False:
+        if auto == False:
             path_window = Tk()
             self.list_path = filedialog.askopenfilename(initialdir=getcwd(),
                                                         filetypes=[
@@ -432,7 +466,6 @@ class Application(object):
             if no_interface == False:
                 self.list_info.set(value='List not loaded.')
 
-
     def etree_to_list(self):
         self.etree = et.parse(self.list_path)
         root = self.etree.getroot()
@@ -441,7 +474,7 @@ class Application(object):
     def update_list_info(self, no_interface=False):
         self.list_loaded = True
         self.list_date = self.get_list_date()
-        if no_interface==False:
+        if no_interface == False:
             self.list_info.set(
                 value=f'List loaded.\n\nNumber of Individuals: {self.individuals_df.__len__()}\nNumber of Entities: {self.entities_df.__len__()}\n\nList date: {self.list_date.isoformat()}')
 
@@ -483,8 +516,10 @@ class Application(object):
 
     def clean_entities_df(self):
         # drop all NAs and put FIRST_NAME column first
-        self.entities_df = self.entities_df.dropna(axis=1,how='all')
-        self.entities_df = self.entities_df[['FIRST_NAME'] + [col for col in self.entities_df.columns if col != 'FIRST_NAME']]
+        self.entities_df = self.entities_df.dropna(axis=1, how='all')
+        self.entities_df = self.entities_df[
+            ['FIRST_NAME'] + [col for col in self.entities_df.columns if
+                              col != 'FIRST_NAME']]
 
     def append_individuals_full_name(self):
         # Creates a full name column for every individual on list, drops used
@@ -513,7 +548,11 @@ class Application(object):
         self.name_entry.focus_force()
         self.root.mainloop()
 
+
 def run():
     app = Application()
     app.main()
 
+
+if __name__ == '__main__':
+    run()

@@ -5,5 +5,4 @@ dist/
 *.egg-info/
 *.egg
 *.pdf
-*wkhtmlto*
 reports/*
