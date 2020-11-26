@@ -1,3 +1,4 @@
 include template/report.html
 include wkhtmltopdf.exe
 include reports/
+include data/consolidated.xml

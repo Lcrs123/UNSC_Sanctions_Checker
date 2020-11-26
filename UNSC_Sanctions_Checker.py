@@ -170,7 +170,6 @@ class Application(object):
                                                                   column=0,
                                                                   sticky=NW)
 
-
     def call_all_interface_methods(self):
         # Calls all methods decorated with @interface_method
         for name in dir(self):
@@ -200,11 +199,10 @@ class Application(object):
         self.full_list_treeview['show'] = 'headings'
         # Change treeview label to number of matches
         self.full_list_label_var.set(
-            value=f'Showing all {len(chosen_list_df)} entries in {self.list_chosen.get()} list.')
+            value=f'Showing all {len(chosen_list_df)} entries in {self.full_list_window_rb_var.get()} list.')
         # add match results to treeview
         for row in chosen_list_df.values.tolist():
             self.full_list_treeview.insert('', 'end', values=row)
-
 
     def generate_report_button_func(self):
         if self.list_loaded and hasattr(self,'last_name_searched'):
@@ -323,7 +321,7 @@ class Application(object):
     def output_report_path(self, filetype:str):
         assert filetype in ['pdf','html']
         output_path = filedialog.asksaveasfilename(
-                initialdir='Reports',
+                initialdir=getcwd(),
                 initialfile=f'{self.last_score_used}-{self.last_name_searched}-report.{filetype}',
                 filetypes=[(f'{filetype.capitalize()} files', f'*.{filetype}')]
             )
@@ -502,7 +500,6 @@ class Application(object):
         self.load_list(auto=True)
         self.name_entry.focus_force()
         self.root.mainloop()
-
 
 
 if __name__ == '__main__':

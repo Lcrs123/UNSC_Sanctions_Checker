@@ -25,5 +25,9 @@ setuptools.setup(
                  "Operating System :: Microsoft :: Windows"],
     python_requires='>=3.7',
     install_requires=requirements,
-    data_files=[('data','data/consolidated.xml')]
+    data_files=[
+        ('data',['data/consolidated.xml']),
+        ('template',['template/report.html']),
+        ('',['wkhtmltopdf.exe'])
+    ]
 )
