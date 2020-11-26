@@ -3,12 +3,17 @@ from datetime import date
 from os import getcwd, stat, startfile, path
 from tkinter import *
 from tkinter import filedialog, ttk, messagebox, simpledialog
+# importing directories as packages using empty __init__.py files for easier
+# pathing.
+from unsc_sanctions_checker import data,template
+from unsc_sanctions_checker import wkhtmltopdf as _wkhtmltopdf
 
 import pandas as pd
 import pdfkit
 import requests
 from fuzzywuzzy import process
 from jinja2 import Environment, FileSystemLoader
+
 
 def interface_method(f):
     # Decorator for identifying interface methods for easier calling
@@ -18,6 +23,9 @@ def interface_method(f):
 
 class Application(object):
     UNSC_sanctions_list_url = "https://scsanctions.un.org/resources/xml/en/consolidated.xml"
+    default_list_path = path.join(path.dirname(data.__file__),'consolidated.xml')
+    default_template_path = path.dirname(template.__file__)
+    default_wkhtmltopdf_path = path.join(path.dirname(_wkhtmltopdf.__file__),'wkhtmltopdf.exe')
 
     @staticmethod
     def get_column_list(element) -> list:
@@ -32,11 +40,11 @@ class Application(object):
         return element_columns
 
     def __init__(self):
-        self.etree = None
         self.elements_list = []
-        self.list_path = 'data/consolidated.xml'
+        self.list_path = Application.default_list_path
         self.list_loaded = False
         self.full_list_window_rb_var = None
+        self.pdfkit_config = None
 
     def create_main_frame(self):
         # Creates the root and main Frame widget, referenced by the other subframe
@@ -134,7 +142,7 @@ class Application(object):
 
     @interface_method
     def create_matches_treeview(self, full_list=False):
-        # creates the treeview for the match results. use with full_list = True
+        # creates the treeview for the match results. Use with full_list = True
         # to create the treeview for showing the entire list in a new window
         if full_list==False:
             self.matches_label_var = StringVar(value='No Matches:')
@@ -187,6 +195,7 @@ class Application(object):
         self.display_full_list()
 
     def display_full_list(self):
+        #TODO split into smaller functions
         self.full_list_treeview.delete(*self.full_list_treeview.get_children())
         chosen_list_df = self.list_choice_to_dataframe(
             self.full_list_window_rb_var.get())
@@ -287,7 +296,7 @@ class Application(object):
             startfile(filepath=output_path)
 
     def make_html_report(self):
-        env = Environment(loader=FileSystemLoader('template'))
+        env = Environment(loader=FileSystemLoader(Application.default_template_path))
         template = env.get_template('report.html')
         template_vars = {
             'name_searched': f'"{self.last_name_searched}"',
@@ -305,9 +314,12 @@ class Application(object):
     def output_report(self, html_report):
         try:
             output_path = self.output_report_path('pdf')
+            if self.pdfkit_config==None:
+                self.pdfkit_config = pdfkit.configuration(wkhtmltopdf=Application.default_wkhtmltopdf_path)
             pdfkit.from_string(html_report,
                                output_path=output_path,
-                               options={'quiet': ''}
+                               options={'quiet': ''},
+                               configuration=self.pdfkit_config
                                )
             self.ask_open_report(output_path)
         except OSError:
@@ -501,7 +513,7 @@ class Application(object):
         self.name_entry.focus_force()
         self.root.mainloop()
 
-
-if __name__ == '__main__':
+def run():
     app = Application()
     app.main()
+

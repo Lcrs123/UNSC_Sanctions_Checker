@@ -1,4 +1,3 @@
-include template/report.html
-include wkhtmltopdf.exe
-include reports/
-include data/consolidated.xml
+include unsc_sanctions_checker/template/report.html
+include unsc_sanctions_checker/wkhtmltopdf/wkhtmltopdf.exe
+include unsc_sanctions_checker/data/consolidated.xml

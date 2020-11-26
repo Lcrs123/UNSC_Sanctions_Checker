@@ -16,22 +16,20 @@ time you run the program.
 
 To install the package:
 
-`pip install UNSC_Sanctions_Checker`
-
-This package uses pdfkit to create pdf reports. You need to download wkhtmltopdf
-from https://wkhtmltopdf.org/downloads.html and extract the files (specifically
-wkhtmltopdf.exe) to your working directory so pdfkit can function properly.
-Without wkhtmltopdf, reports will be generated in html format.
+`pip install unsc_sanctions_checker`
 
 You can run the script from the terminal:
 
-`python UNSC_Sanctions_Checker.py`
+`python -m unsc_sanctions_checker.py`
 
-Or in python you can do:
+or just:
+
+`unsc'
+
+In python you can do:
 
 ```
-import UNSC_Sanctions_Checker
+import unsc_sanctions_checker
 
-app = UNSC_Sanctions_Checker.Application()
-app.main()
+unsc_sanctions_checker.run()
 ```
