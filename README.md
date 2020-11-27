@@ -33,3 +33,18 @@ import unsc_sanctions_checker
 
 unsc_sanctions_checker.run()
 ```
+
+# Creating executable
+
+To create a runnable executable file with python and all dependencies included,
+in terminal run:
+
+`python exe_setup.py py2exe`
+
+The contents will be output to '/exe_dist'. Running unsc_sanctions_checker.exe
+will start the program.
+
+# Known issues:
+
+Exiting the program will always create a warning and log file about not having
+python-levenshtein installed, due to package fuzzywuzzy.
