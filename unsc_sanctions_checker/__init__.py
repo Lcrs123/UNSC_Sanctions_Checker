@@ -19,10 +19,8 @@ from unsc_sanctions_checker import wkhtmltopdf as _wkhtmltopdf
 
 def main_is_frozen():
     # Used for determining if file is running as script or exe. Returns true if
-    # exe.
-    return (hasattr(sys, "frozen") or # new py2exe
-        hasattr(sys, "importers") # old py2exe
-        or is_frozen("__main__")) # tools/freeze
+    # exe. More info: https://pyinstaller.readthedocs.io/en/v3.3.1/runtime-information.html#
+    return (hasattr(sys, "frozen") or hasattr(sys, "importers") or is_frozen("__main__"))
 
 def get_main_dir():
     # Get directory if running as exe
