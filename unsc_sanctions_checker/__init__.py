@@ -1,8 +1,10 @@
 import xml.etree.ElementTree as et
 from datetime import date
 from os import getcwd, stat, startfile, path
-from tkinter import *
-from tkinter import filedialog, ttk, messagebox, simpledialog
+from tkinter import Tk, filedialog, ttk, messagebox, simpledialog, StringVar, IntVar, Toplevel, Radiobutton
+from tkinter.constants import *
+from _imp import is_frozen
+import sys
 
 import pandas as pd
 import pdfkit
@@ -15,6 +17,17 @@ from jinja2 import Environment, FileSystemLoader
 from unsc_sanctions_checker import data, template
 from unsc_sanctions_checker import wkhtmltopdf as _wkhtmltopdf
 
+def main_is_frozen():
+    # Used for determining if file is running as script or exe. Returns true if
+    # exe.
+    return (hasattr(sys, "frozen") or # new py2exe
+        hasattr(sys, "importers") # old py2exe
+        or is_frozen("__main__")) # tools/freeze
+
+def get_main_dir():
+    # Get directory if running as exe
+    if main_is_frozen():
+        return path.dirname(sys.executable)
 
 def interface_method(f):
     # Decorator for identifying interface methods for easier calling
@@ -24,11 +37,16 @@ def interface_method(f):
 
 class Application(object):
     UNSC_sanctions_list_url = "https://scsanctions.un.org/resources/xml/en/consolidated.xml"
-    default_list_path = path.join(path.dirname(data.__file__),
-                                  'consolidated.xml')
-    default_template_path = path.dirname(template.__file__)
-    default_wkhtmltopdf_path = path.join(path.dirname(_wkhtmltopdf.__file__),
-                                         'wkhtmltopdf.exe')
+    if main_is_frozen():
+        default_list_path = path.join(get_main_dir(),'data','consolidated.xml')
+        default_template_path = path.join(get_main_dir(),'template')
+        default_wkhtmltopdf_path = path.join(get_main_dir(),'wkhtmltopdf','wkhtmltopdf.exe')
+    else:
+        default_list_path = path.join(path.dirname(data.__file__),
+                                      'consolidated.xml')
+        default_template_path = path.dirname(template.__file__)
+        default_wkhtmltopdf_path = path.join(path.dirname(_wkhtmltopdf.__file__),
+                                             'wkhtmltopdf.exe')
 
     @staticmethod
     def get_column_list(element) -> list:
