@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as et
 from datetime import date
 from os import getcwd, stat, startfile, path
-from tkinter import Tk, filedialog, ttk, messagebox, simpledialog, StringVar, IntVar, Toplevel, Radiobutton
+from tkinter import Tk, filedialog, ttk, messagebox, simpledialog, StringVar, IntVar, Toplevel, Radiobutton, Menu
 from tkinter.constants import *
 from _imp import is_frozen
 import sys
@@ -139,10 +139,11 @@ class Application(object):
         ttk.Label(self.search_options_frame, text='Name:').grid(column=0,
                                                                 row=1,
                                                                 sticky=E)
+        self.name_entry.bind(sequence='<Return>',func=self.search_button_func)
 
     @interface_method
     def create_search_button(self):
-        ttk.Button(self.search_options_frame, text='Search',
+        self.search_button = ttk.Button(self.search_options_frame, text='Search',
                    command=self.search_button_func).grid(column=3, row=1,
                                                          sticky=W)
 
@@ -208,11 +209,25 @@ class Application(object):
                 yscrollcommand=self.full_list_scrollbar.set)
 
     @interface_method
-    def create_generate_report_button(self):
-        ttk.Button(self.search_results_frame, text='Generate report',
-                   command=self.generate_report_button_func).grid(row=2,
-                                                                  column=0,
-                                                                  sticky=NW)
+    def create_save_report_button(self):
+        ttk.Button(self.search_results_frame, text='Save report',
+                   command=self.save_report_button_func).grid(row=2,
+                                                              column=0,
+                                                              sticky=NW)
+
+    @interface_method
+    def create_menus(self):
+        self.menu = Menu(master=self.root)
+        self.file_menu = Menu(master=self.menu,tearoff=0)
+        self.file_menu.add_command(label='Load list',command=self.load_button_func)
+        self.file_menu.add_command(label='Download list',command=self.download_list_button_func)
+        self.file_menu.add_command(label='Check update',command=self.check_update_button_func)
+        self.file_menu.add_separator()
+        self.file_menu.add_command(label='Save report', command=self.save_report_button_func)
+        self.file_menu.add_separator()
+        self.file_menu.add_command(label='Exit',command=self.root.quit)
+        self.menu.add_cascade(label='File',menu=self.file_menu)
+        self.root.config(menu=self.menu)
 
     def call_all_interface_methods(self):
         # Calls all methods decorated with @interface_method
@@ -256,7 +271,7 @@ class Application(object):
         for row in chosen_list_df.values.tolist():
             self.full_list_treeview.insert('', 'end', values=row)
 
-    def generate_report_button_func(self):
+    def save_report_button_func(self):
         if self.list_loaded and hasattr(self, 'last_name_searched'):
             html_report = self.make_html_report()
             self.output_report(html_report)
@@ -289,7 +304,7 @@ class Application(object):
             messagebox.showerror(
                 message='Could not download list. Try again with a different link or choose it manually')
 
-    def search_button_func(self):
+    def search_button_func(self,event):
         # TODO split method into smaller functions
         if self.list_loaded:
             # save search info
