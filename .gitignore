@@ -6,3 +6,4 @@ dist/
 *.egg
 *.pdf
 reports/*
+/exe_dist/
