@@ -543,14 +543,21 @@ class Application(object):
                 ['FIRST_NAME', 'SECOND_NAME', 'THIRD_NAME',
                  'FOURTH_NAME']].astype(
                 str)
+        self.individuals_df[:,'LISTED_ON'] = self.individuals_df['LISTED_ON'].astype(
+            dtype='datetime64').dt.date
         self.individuals_df = self.individuals_df.dropna(axis=1, how='all')
 
     def clean_entities_df(self):
-        # drop all NAs and put FIRST_NAME column first
+        # drop columns with all NAs, put FIRST_NAME column first, change listed
+        # on dtype
         self.entities_df = self.entities_df.dropna(axis=1, how='all')
+        self.entities_df[:,'LISTED_ON'] = self.entities_df['LISTED_ON'].astype(
+            dtype='datetime64').dt.date
         self.entities_df = self.entities_df[
             ['FIRST_NAME'] + [col for col in self.entities_df.columns if
                               col != 'FIRST_NAME']]
+
+
 
     def append_individuals_full_name(self):
         # Creates a full name column for every individual on list, drops used
