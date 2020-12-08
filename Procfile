@@ -1,1 +1,1 @@
-web: gunicorn unsc-sanctions-checker.wsgi
+web: gunicorn unsc.wsgi
