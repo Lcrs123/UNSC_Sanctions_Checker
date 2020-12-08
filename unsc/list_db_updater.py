@@ -9,6 +9,7 @@ if __name__ == '__main__':
 else:
     from unsc.unsc.settings import DATABASES
 
+
 UNSC_sanctions_list_url = "https://scsanctions.un.org/resources/xml/en/consolidated.xml"
 
 
