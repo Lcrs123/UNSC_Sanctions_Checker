@@ -1,1 +1,1 @@
-web: gunicorn unsc/unsc.wsgi
+web: gunicorn unsc.wsgi
