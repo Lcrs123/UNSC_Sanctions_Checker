@@ -3,3 +3,5 @@ jinja2
 fuzzywuzzy
 requests
 pandas
+gunicorn
+django-heroku
