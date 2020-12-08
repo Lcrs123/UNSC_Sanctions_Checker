@@ -3,4 +3,3 @@ jinja2
 fuzzywuzzy
 requests
 pandas
-py2exe
