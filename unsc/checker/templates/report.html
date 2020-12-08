@@ -1,26 +1,37 @@
-{% extends "index.html" %}
+{% extends "search.html" %}
+{% block navbar %}
+{% endblock %}
 {% block list_info %}
 {% endblock %}
+{% block search %}
+{% endblock %}
 {% block search_info %}
-
 <div class="container-fluid">
-<hr>
+
     <div class="row">
         <div class="col">
-            <h2>Search parameters:</h2>
-            <h3>Name searched: "{{ form.search_name }}"</h3>
-            <h3>Matching score used: {{ form.matching_score }}</h3>
-            <h3>Date of search: {{ date_of_search }}</h3>
-            <h3>List searched: {{ form.list_to_search }}</h3>
-            <h3>List date: {{ list_date }} (YYYY-MM-DD format)</h3>
+            <h2>UNSC Sanctions List check report</h2>
+            <h3>This report was generated through www.unscchecker.com</h3>
         </div>
     </div>
 
+    <hr>
+
+    <div class="row">
+        <div class="col">
+            <h2>Search parameters:</h2>
+            <h3>Name searched: "{{ name_searched }}"</h3>
+            <h3>Matching score used: {{ score_used }}</h3>
+            <h3>Date of search: {{ date_of_search }}</h3>
+            <h3>List searched: {{ list_searched }}</h3>
+            <h3>List date: {{ list_date }} (YYYY-MM-DD format)</h3>
+        </div>
+    </div>
 </div>
 
-{% endblock %}
-
+    {% endblock %}
 {% block search_results %}
+
 <div class="container-fluid">
 <hr>
     <div class="row">
@@ -30,16 +41,11 @@
         </div>
     </div>
     <div class="row">
-        <div class="col-11 align-self-center">
-            <a href={% url "save_report" %} class="btn btn-light btn-block mb-2"><strong>Click to save report</strong></a>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-11">
+        <div class="col-11 mr-2">
             {{ table|safe }}
         </div>
     </div>
-</div>
+    </div>
 
 
 {% endblock %}

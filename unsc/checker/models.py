@@ -2,13 +2,13 @@ from django.db import models
 from django.urls import reverse
 import pandas as pd
 from sqlalchemy import create_engine
-from unsc.settings import DATABASES
+from django.conf import settings
 
 # Create your models here.
 
 class shared_methods:
     def to_df_to_html(self):
-        engine = create_engine(f'sqlite:///{DATABASES["default"]["NAME"]}',
+        engine = create_engine(f'sqlite:///{settings.DATABASES["default"]["NAME"]}',
                                echo=False)
         df = pd.read_sql(f'checker_{str(self.__class__.__name__).lower()}',
                          con=engine)

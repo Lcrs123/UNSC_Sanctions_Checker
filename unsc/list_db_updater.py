@@ -30,16 +30,19 @@ def read_xml(requests_object: requests.Request) -> et.ElementTree:
         os.remove(file.name)
     return element_tree
 
+
 def element_tree_to_list(element_tree: et.ElementTree) -> list:
     root = element_tree.getroot()
     elements_list = list(root)[0:2]
     return elements_list
+
 
 def get_list_date(element_tree: et.ElementTree) -> date:
     root = element_tree.getroot()
     date_str = root.items()[1][1]
     iso_date = date.fromisoformat(date_str[:10])
     return iso_date
+
 
 def get_column_list(element:list) -> list:
     assert element.tag in ['INDIVIDUALS',
@@ -49,6 +52,7 @@ def get_column_list(element:list) -> list:
     for column in first_child:
         element_columns.append(column.tag)
     return element_columns
+
 
 def elements_list_to_df(elements_list:list) -> dict:
     df_dict = {}
@@ -63,6 +67,7 @@ def elements_list_to_df(elements_list:list) -> dict:
             df = df.append(child_dict, ignore_index=True)
         df_dict[element.tag] = df
     return df_dict
+
 
 def clean_individuals_df(dataframe: pd.DataFrame) -> pd.DataFrame:
     # Fills name columns NAs with empty strings, turns name columns dtype
@@ -113,6 +118,7 @@ def append_individuals_full_name(dataframe: pd.DataFrame) -> pd.DataFrame:
                          col != 'FULL_NAME']]
     return dataframe
 
+
 def clean_dfs(df_dict:dict, list_date:date) -> dict:
     df_dict['INDIVIDUALS'] = clean_individuals_df(df_dict['INDIVIDUALS'])
     df_dict['INDIVIDUALS'] = append_individuals_full_name(df_dict['INDIVIDUALS'])
@@ -120,6 +126,7 @@ def clean_dfs(df_dict:dict, list_date:date) -> dict:
     for key in df_dict:
         df_dict[key]['LIST_DATE'] = list_date.isoformat()
     return df_dict
+
 
 def connect_to_db(db_address:str):
     engine = create_engine(db_address, echo=False)
@@ -138,8 +145,7 @@ def df_to_db(dataframe:pd.DataFrame, app_name:str, table_name:str, connection_en
         print(f'Sucessfully updated table {app_name}_{table_name.lower()}')
 
 
-def main(db_adress=f'sqlite:///{DATABASES["default"]["NAME"]}'):
-    target_app_name = 'checker'
+def main(db_adress=f'sqlite:///{DATABASES["default"]["NAME"]}', target_app_name='checker'):
     print(f'Starting script at directory {os.getcwd()}')
     r = connect_to_url()
     print(f'Successfully connected and downloaded list from {r.url}')
@@ -152,12 +158,13 @@ def main(db_adress=f'sqlite:///{DATABASES["default"]["NAME"]}'):
     df_dict = elements_list_to_df(elements_list)
     print(f'Successfully turned element list to dataframes dictionary')
     cleaned_df_dict = clean_dfs(df_dict,list_date)
-    print(f'Successfully cleaned dataframes in dictionary')
+    print(f'Successfully cleaned dataframes in dictionary and appended list date')
     engine = connect_to_db(db_address=db_adress)
     print(f'Successfully created SQL engine connection with database at {engine._db_adress}')
     print(f'Available tables for app {target_app_name}: {[table for table in engine.table_names() if target_app_name in table]}')
     for key,value in cleaned_df_dict.items():
         df_to_db(dataframe=value, app_name=target_app_name,table_name=key, connection_engine=engine, list_date=list_date)
+
 
 if __name__ == '__main__':
     main()

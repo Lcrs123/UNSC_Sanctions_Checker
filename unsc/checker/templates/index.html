@@ -28,9 +28,11 @@
     {% endblock %}
 
     {% block search %}
-    {% block search_url %}
+    {% if is_index %}
     <form class="form-group" action="./search/" method="GET">
-    {% endblock %}
+    {% else %}
+    <form class="form-group" action="" method="GET">
+    {% endif %}
 
         <div class="form-row input-group align-items-center">
             <div class="col-3">
@@ -40,16 +42,17 @@
                     </label>
                 </div>
             </div>
+
                 <div class="col-4">
                     <label class="btn btn-secondary btn-block col-form-label">
                     <input class="form-control" type="radio" name="list_to_search" id="individuals"
-                           autocomplete="off" value="individuals" checked> Individuals
+                           autocomplete="off" value="individuals" {% if list_is_entities %}{% else %}checked{% endif %}> Individuals
                 </label>
                 </div>
                     <div class="col-4">
                 <label class="btn btn-secondary btn-block col-form-label">
                     <input class="form-control" type="radio" name="list_to_search" id="entities" value="entities"
-                           autocomplete="off"> Entities
+                           autocomplete="off" {% if list_is_entities %}checked{% else %}{% endif %}> Entities
                 </label>
                     </div>
               </div>
@@ -60,17 +63,17 @@
             </div>
             <div class="col-8">
             <input class="form-control" type="text" id="search_name"
-                   name="search_name"></div>
+                   name="search_name" value={% firstof form.search_name "" %}></div>
         </div>
 
         <div class="form-row input-group align-items-center">
           <div class="col-3 text-nowrap">
-            <label class="col-for-label" for="score">Matching score: </label>
+            <label class="col-for-label" for="matching_score">Matching score: </label>
               <span class="valueSpan font-weight-bold"></span>
           </div>
                 <div class="col text-right">0</div>
                 <div class="col-6">
-            <input type="range" min="0" max="100" value="90" step="1"
+            <input type="range" min="0" max="100" value={% firstof form.matching_score 90 %} step="1"
                    class="form-control-range" id="matching_score" name="matching_score">
                 </div>
                 <div class="col text-left">100</div>
@@ -94,6 +97,8 @@
 });</script>
 {% endblock %}
 
+{% block search_info %}
+{% endblock %}
 {% block search_results %}
 {% endblock %}
 {% endblock %}
