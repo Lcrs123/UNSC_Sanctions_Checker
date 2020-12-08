@@ -2,6 +2,8 @@ pdfkit
 jinja2
 fuzzywuzzy
 requests
+numpy==1.19.3
 pandas
 gunicorn
 django-heroku
+sqlalchemy
