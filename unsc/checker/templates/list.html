@@ -1,0 +1,9 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+
+<h1>{{ list_name }} List</h1>
+<p>Number of {{ list_name }} listed: {{ item_count }}</p>
+{{ table|safe }}
+
+{% endblock %}

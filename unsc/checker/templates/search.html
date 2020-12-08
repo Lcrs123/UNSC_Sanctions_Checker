@@ -1,0 +1,15 @@
+{% extends "index.html" %}
+{% block list_info %}
+{% endblock %}
+    {% block search_url %}
+    <form class="form-group" action="" method="GET">
+        {% endblock %}
+
+{% block search_results %}
+<div class="container-fluid">
+<hr>
+<h1> Search results:</h1>
+<h2> {{ num_matches }} match(es) for "{{ name_searched }}" on {{ chosen_list }}  List using score {{ score_used }}:</h2>
+    {{ table|safe }}
+</div>
+{% endblock %}
