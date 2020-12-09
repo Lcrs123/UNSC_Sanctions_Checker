@@ -1,1 +1,1 @@
-web: gunicorn --pythonpath unsc unsc.wsgi
+web: gunicorn --pythonpath unsc unsc.wsgi --log-file -

@@ -1,1 +1,1 @@
-web: --pythonpath unsc python manage.py runserver 0.0.0.0:5000
+web: python unsc/manage.py runserver 0.0.0.0:5000
