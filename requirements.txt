@@ -1,5 +1,4 @@
 pdfkit
-jinja2
 fuzzywuzzy
 requests
 numpy==1.19.3
@@ -7,7 +6,6 @@ pandas
 gunicorn
 django-heroku
 sqlalchemy
-wkhtmltopdf
 dj-database-url
 python-pdf
 psycopg2-binary
