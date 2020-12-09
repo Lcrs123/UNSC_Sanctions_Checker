@@ -12,7 +12,7 @@ def index(request):
     num_individuals = INDIVIDUALS.objects.count()
     num_entities = ENTITIES.objects.count()
 
-    list_date = INDIVIDUALS.objects.values_list('LIST_DATE', flat=True)[0].isoformat()
+    list_date = INDIVIDUALS.objects.values_list('LIST_DATE', flat=True)[0]
     is_index = True
 
     context = {
