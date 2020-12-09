@@ -17,7 +17,7 @@ class shared_methods:
 
 class INDIVIDUALS(models.Model, shared_methods):
 
-    FULL_NAME = models.CharField(max_length=512)
+    FULL_NAME = models.CharField(max_length=511)
     DATAID = models.CharField(primary_key=True,max_length=512)
     VERSIONNUM = models.IntegerField()
     UN_LIST_TYPE = models.CharField(max_length=512)

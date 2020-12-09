@@ -139,7 +139,10 @@ def connect_to_db(db_address:str):
 
 def df_to_db(dataframe:pd.DataFrame, app_name:str, table_name:str, connection_engine,list_date:date,mode:str='replace') -> None:
     current_db_list_date = connection_engine.execute(f'SELECT LIST_DATE FROM {app_name}_{table_name.lower()}').fetchone()
-    if current_db_list_date[0] == list_date.isoformat():
+    if current_db_list_date == None:
+        dataframe.to_sql(f'{app_name}_{table_name.lower()}', con=connection_engine, if_exists=mode, index=False)
+        print(f'Sucessfully updated table {app_name}_{table_name.lower()}')
+    elif current_db_list_date[0] == list_date.isoformat():
         print(f'Loaded list for {table_name} on table {app_name}_{table_name.lower()} is already up-to-date, table not changed.')
     else:
         dataframe.to_sql(f'{app_name}_{table_name.lower()}', con=connection_engine, if_exists=mode, index=False)

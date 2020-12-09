@@ -3,12 +3,15 @@ from django.conf import settings
 import pandas as pd
 from sqlalchemy import create_engine
 from fuzzywuzzy import process
-from unsc import wkhtmltopdf as _wkhtmltopdf
-from os import path
+from pydf import wkhtmltopdf
+from os import path, rename
 import pdfkit
 from datetime import date
 from django.template.loader import get_template
 
+if path.exists(wkhtmltopdf.WK_PATH):
+    rename(wkhtmltopdf.WK_PATH, path.join(path.dirname(wkhtmltopdf.WK_PATH),
+                                 'wkhtmltopdf.exe'))
 
 class search_parameters(forms.Form):
     INDIVIDUALS = 'individuals'
@@ -17,7 +20,7 @@ class search_parameters(forms.Form):
         (INDIVIDUALS,'Individuals List'),
         (ENTITIES,'Entities List')
     ]
-    WKHTMLTOPDF_PATH = path.join(path.dirname(_wkhtmltopdf.__file__),
+    WKHTMLTOPDF_PATH = path.join(path.dirname(wkhtmltopdf.WK_PATH),
                                  'wkhtmltopdf.exe')
 
     list_to_search = forms.ChoiceField(choices=LIST_CHOICES, initial='individuals')
