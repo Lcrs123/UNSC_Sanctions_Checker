@@ -10,3 +10,4 @@ sqlalchemy
 wkhtmltopdf
 dj-database-url
 python-pdf
+psycopg2-binary
