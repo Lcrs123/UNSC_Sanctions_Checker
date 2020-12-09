@@ -67,7 +67,7 @@ class search_parameters(forms.Form):
         }
         template = get_template('report.html')
         html_report = template.render(context)
-        pdfkit_config = pdfkit.configuration(wkhtmltopdf='/bin/wkhtmltopdf')
+        pdfkit_config = pdfkit.configuration(wkhtmltopdf=self.WKHTMLTOPDF_PATH)
         file_path = f'report_{self["search_name"].value()}_score_{self["matching_score"].value()}_matches_{request_session["match_info"]["num_matches"]}.pdf'
         pdfkit.from_string(html_report,output_path=file_path,configuration=pdfkit_config, css=path.join(settings.STATIC_CSS, 'bootstrap.css'), options={
             'enable-local-file-access': '',
