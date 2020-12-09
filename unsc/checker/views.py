@@ -30,8 +30,7 @@ def search(request):
     form.full_clean()
     request.session['last_form'] = form.data
     list_is_entities = form['list_to_search'].value() == 'entities'
-    list_date = INDIVIDUALS.objects.values_list('LIST_DATE', flat=True)[
-        0].isoformat()
+    list_date = INDIVIDUALS.objects.values_list('LIST_DATE', flat=True)[0]
     df_matches = form.get_search_results()
     df_matches_json = df_matches.to_json()
     num_matches = len(df_matches)
