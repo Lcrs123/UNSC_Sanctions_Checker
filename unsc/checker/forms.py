@@ -13,6 +13,8 @@ if path.exists(wkhtmltopdf.WK_PATH):
     rename(wkhtmltopdf.WK_PATH, path.join(path.dirname(wkhtmltopdf.WK_PATH),
                                  'wkhtmltopdf.exe'))
 
+db_adress=r'postgres://chjcgabvhoczfm:6a9f1008d96424bf5fa073612f74aa642b0ad4be205c7b828d3d6039800ca760@ec2-52-71-153-228.compute-1.amazonaws.com:5432/d9jmdmvc2kvbs2'
+
 class search_parameters(forms.Form):
     INDIVIDUALS = 'individuals'
     ENTITIES = 'entities'
@@ -28,7 +30,7 @@ class search_parameters(forms.Form):
     matching_score = forms.IntegerField(initial=90, min_value=0,max_value=100)
 
     def get_search_results(self):
-        engine = create_engine(f'sqlite:///{settings.DATABASES["default"]["NAME"]}',
+        engine = create_engine(db_adress,
                                echo=False)
         df = pd.read_sql(f'checker_{self["list_to_search"].value()}',
                          con=engine)
@@ -65,7 +67,7 @@ class search_parameters(forms.Form):
         }
         template = get_template('report.html')
         html_report = template.render(context)
-        pdfkit_config = pdfkit.configuration(wkhtmltopdf=self.WKHTMLTOPDF_PATH)
+        pdfkit_config = pdfkit.configuration(wkhtmltopdf='/bin/wkhtmltopdf')
         file_path = f'report_{self["search_name"].value()}_score_{self["matching_score"].value()}_matches_{request_session["match_info"]["num_matches"]}.pdf'
         pdfkit.from_string(html_report,output_path=file_path,configuration=pdfkit_config, css=path.join(settings.STATIC_CSS, 'bootstrap.css'), options={
             'enable-local-file-access': '',
