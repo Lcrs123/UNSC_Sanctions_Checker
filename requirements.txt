@@ -9,3 +9,4 @@ django-heroku
 sqlalchemy
 wkhtmltopdf
 dj-database-url
+python-pdf
