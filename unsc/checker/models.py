@@ -8,7 +8,7 @@ from django.conf import settings
 
 class shared_methods:
     def to_df_to_html(self):
-        engine = create_engine(f'sqlite:///{settings.DATABASES["default"]["NAME"]}',
+        engine = create_engine(settings.DB_ADDRESS,
                                echo=False)
         df = pd.read_sql(f'checker_{str(self.__class__.__name__).lower()}',
                          con=engine)

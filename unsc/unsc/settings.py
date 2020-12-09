@@ -22,10 +22,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'lx$0fj6=lyy#8^@n_$7jd_-$r*=f4sba=xtz3z3o=35+b(z4@#'
+
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'lx$0fj6=lyy#8^@n_$7jd_-$r*=f4sba=xtz3z3o=35+b(z4@#')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = False
+DEBUG = os.environ.get('DJANGO_DEBUG', '') != 'False'
 
 ALLOWED_HOSTS = ['unsc-sanctions-checker.herokuapp.com', '127.0.0.1']
 
@@ -84,6 +86,7 @@ DATABASES = {
 }
 
 
+
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
 
@@ -134,3 +137,5 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 db_from_env = dj_database_url.config(conn_max_age=500)
 DATABASES['default'].update(db_from_env)
+
+DB_ADDRESS = r'postgres://chjcgabvhoczfm:6a9f1008d96424bf5fa073612f74aa642b0ad4be205c7b828d3d6039800ca760@ec2-52-71-153-228.compute-1.amazonaws.com:5432/d9jmdmvc2kvbs2'

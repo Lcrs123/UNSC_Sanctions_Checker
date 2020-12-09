@@ -13,7 +13,7 @@ if path.exists(wkhtmltopdf.WK_PATH):
     rename(wkhtmltopdf.WK_PATH, path.join(path.dirname(wkhtmltopdf.WK_PATH),
                                  'wkhtmltopdf.exe'))
 
-db_adress=r'postgres://chjcgabvhoczfm:6a9f1008d96424bf5fa073612f74aa642b0ad4be205c7b828d3d6039800ca760@ec2-52-71-153-228.compute-1.amazonaws.com:5432/d9jmdmvc2kvbs2'
+
 
 class search_parameters(forms.Form):
     INDIVIDUALS = 'individuals'
@@ -30,7 +30,7 @@ class search_parameters(forms.Form):
     matching_score = forms.IntegerField(initial=90, min_value=0,max_value=100)
 
     def get_search_results(self):
-        engine = create_engine(db_adress,
+        engine = create_engine(settings.DB_ADDRESS,
                                echo=False)
         df = pd.read_sql(f'checker_{self["list_to_search"].value()}',
                          con=engine)
